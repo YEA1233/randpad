@@ -16,6 +16,8 @@ jobs:
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           export REPO_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}"
           sh build_deb.sh "${GITHUB_REF_NAME#v}"
+      - name: Install apt-utils
+        run: sudo apt-get update && sudo apt-get install -y apt-utils
       - name: Build apt repository
         run: |
           mkdir site
