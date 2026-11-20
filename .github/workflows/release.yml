@@ -1,0 +1,41 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build .deb
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          export REPO_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${REPO_NAME}"
+          sh build_deb.sh "${GITHUB_REF_NAME#v}"
+      - name: Build apt repository
+        run: |
+          mkdir site
+          cp randpad_*_all.deb site/
+          cd site
+          dpkg-scanpackages . /dev/null > Packages
+          gzip -k -f Packages
+          apt-ftparchive release . > Release
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: randpad_*_all.deb
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
